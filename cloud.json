@@ -1,0 +1,1134 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "This is Bryan's standard template for AWS-hosted side projects. It is very opinionated about my favorite ways of doing things.",
+
+  "Parameters" : {
+
+    "BuildInstanceType" : {
+      "Description" : "BuildServer EC2 instance type",
+      "Type" : "String",
+      "Default" : "m3.medium",
+      "AllowedValues" : [ "t1.micro", "t2.nano", "t2.micro", "t2.small", "t2.medium", "t2.large", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "c1.medium", "c1.xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "g2.2xlarge", "g2.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge", "hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge", "cg1.4xlarge"]
+,
+      "ConstraintDescription" : "must be a valid EC2 instance type."
+    },
+
+    "ProxyInstanceType" : {
+      "Description" : "ProxyServer EC2 instance type",
+      "Type" : "String",
+      "Default" : "t2.nano",
+      "AllowedValues" : [ "t1.micro", "t2.nano", "t2.micro", "t2.small", "t2.medium", "t2.large", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "c1.medium", "c1.xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "g2.2xlarge", "g2.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge", "hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge", "cg1.4xlarge"]
+,
+      "ConstraintDescription" : "must be a valid EC2 instance type."
+    },
+
+    "DockerInstanceType" : {
+      "Description" : "Docker Host EC2 instance type",
+      "Type" : "String",
+      "Default" : "t2.nano",
+      "AllowedValues" : [ "t1.micro", "t2.nano", "t2.micro", "t2.small", "t2.medium", "t2.large", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "c1.medium", "c1.xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "g2.2xlarge", "g2.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge", "hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge", "cg1.4xlarge"]
+,
+      "ConstraintDescription" : "must be a valid EC2 instance type."
+    },
+
+    "KeyName": {
+      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "ConstraintDescription" : "must be the name of an existing EC2 KeyPair."
+    },
+    
+    "Hieradata": {
+      "Description" : "Base64-encoded hieradata file content for this stack",
+      "Type": "String",
+      "Default": ""
+    }
+    
+  },
+
+  "Mappings" : {
+
+    "AWSInstanceType2Arch" : {
+      "t1.micro"    : { "Arch" : "PV64"   },
+      "t2.nano"     : { "Arch" : "HVM64"  },
+      "t2.micro"    : { "Arch" : "HVM64"  },
+      "t2.small"    : { "Arch" : "HVM64"  },
+      "t2.medium"   : { "Arch" : "HVM64"  },
+      "t2.large"    : { "Arch" : "HVM64"  },
+      "m1.small"    : { "Arch" : "PV64"   },
+      "m1.medium"   : { "Arch" : "PV64"   },
+      "m1.large"    : { "Arch" : "PV64"   },
+      "m1.xlarge"   : { "Arch" : "PV64"   },
+      "m2.xlarge"   : { "Arch" : "PV64"   },
+      "m2.2xlarge"  : { "Arch" : "PV64"   },
+      "m2.4xlarge"  : { "Arch" : "PV64"   },
+      "m3.medium"   : { "Arch" : "HVM64"  },
+      "m3.large"    : { "Arch" : "HVM64"  },
+      "m3.xlarge"   : { "Arch" : "HVM64"  },
+      "m3.2xlarge"  : { "Arch" : "HVM64"  },
+      "m4.large"    : { "Arch" : "HVM64"  },
+      "m4.xlarge"   : { "Arch" : "HVM64"  },
+      "m4.2xlarge"  : { "Arch" : "HVM64"  },
+      "m4.4xlarge"  : { "Arch" : "HVM64"  },
+      "m4.10xlarge" : { "Arch" : "HVM64"  },
+      "c1.medium"   : { "Arch" : "PV64"   },
+      "c1.xlarge"   : { "Arch" : "PV64"   },
+      "c3.large"    : { "Arch" : "HVM64"  },
+      "c3.xlarge"   : { "Arch" : "HVM64"  },
+      "c3.2xlarge"  : { "Arch" : "HVM64"  },
+      "c3.4xlarge"  : { "Arch" : "HVM64"  },
+      "c3.8xlarge"  : { "Arch" : "HVM64"  },
+      "c4.large"    : { "Arch" : "HVM64"  },
+      "c4.xlarge"   : { "Arch" : "HVM64"  },
+      "c4.2xlarge"  : { "Arch" : "HVM64"  },
+      "c4.4xlarge"  : { "Arch" : "HVM64"  },
+      "c4.8xlarge"  : { "Arch" : "HVM64"  },
+      "g2.2xlarge"  : { "Arch" : "HVMG2"  },
+      "g2.8xlarge"  : { "Arch" : "HVMG2"  },
+      "r3.large"    : { "Arch" : "HVM64"  },
+      "r3.xlarge"   : { "Arch" : "HVM64"  },
+      "r3.2xlarge"  : { "Arch" : "HVM64"  },
+      "r3.4xlarge"  : { "Arch" : "HVM64"  },
+      "r3.8xlarge"  : { "Arch" : "HVM64"  },
+      "i2.xlarge"   : { "Arch" : "HVM64"  },
+      "i2.2xlarge"  : { "Arch" : "HVM64"  },
+      "i2.4xlarge"  : { "Arch" : "HVM64"  },
+      "i2.8xlarge"  : { "Arch" : "HVM64"  },
+      "d2.xlarge"   : { "Arch" : "HVM64"  },
+      "d2.2xlarge"  : { "Arch" : "HVM64"  },
+      "d2.4xlarge"  : { "Arch" : "HVM64"  },
+      "d2.8xlarge"  : { "Arch" : "HVM64"  },
+      "hi1.4xlarge" : { "Arch" : "HVM64"  },
+      "hs1.8xlarge" : { "Arch" : "HVM64"  },
+      "cr1.8xlarge" : { "Arch" : "HVM64"  },
+      "cc2.8xlarge" : { "Arch" : "HVM64"  }
+    },
+
+    "AWSInstanceType2NATArch" : {
+      "t1.micro"    : { "Arch" : "NATPV64"   },
+      "t2.nano"     : { "Arch" : "NATHVM64"  },
+      "t2.micro"    : { "Arch" : "NATHVM64"  },
+      "t2.small"    : { "Arch" : "NATHVM64"  },
+      "t2.medium"   : { "Arch" : "NATHVM64"  },
+      "t2.large"    : { "Arch" : "NATHVM64"  },
+      "m1.small"    : { "Arch" : "NATPV64"   },
+      "m1.medium"   : { "Arch" : "NATPV64"   },
+      "m1.large"    : { "Arch" : "NATPV64"   },
+      "m1.xlarge"   : { "Arch" : "NATPV64"   },
+      "m2.xlarge"   : { "Arch" : "NATPV64"   },
+      "m2.2xlarge"  : { "Arch" : "NATPV64"   },
+      "m2.4xlarge"  : { "Arch" : "NATPV64"   },
+      "m3.medium"   : { "Arch" : "NATHVM64"  },
+      "m3.large"    : { "Arch" : "NATHVM64"  },
+      "m3.xlarge"   : { "Arch" : "NATHVM64"  },
+      "m3.2xlarge"  : { "Arch" : "NATHVM64"  },
+      "m4.large"    : { "Arch" : "NATHVM64"  },
+      "m4.xlarge"   : { "Arch" : "NATHVM64"  },
+      "m4.2xlarge"  : { "Arch" : "NATHVM64"  },
+      "m4.4xlarge"  : { "Arch" : "NATHVM64"  },
+      "m4.10xlarge" : { "Arch" : "NATHVM64"  },
+      "c1.medium"   : { "Arch" : "NATPV64"   },
+      "c1.xlarge"   : { "Arch" : "NATPV64"   },
+      "c3.large"    : { "Arch" : "NATHVM64"  },
+      "c3.xlarge"   : { "Arch" : "NATHVM64"  },
+      "c3.2xlarge"  : { "Arch" : "NATHVM64"  },
+      "c3.4xlarge"  : { "Arch" : "NATHVM64"  },
+      "c3.8xlarge"  : { "Arch" : "NATHVM64"  },
+      "c4.large"    : { "Arch" : "NATHVM64"  },
+      "c4.xlarge"   : { "Arch" : "NATHVM64"  },
+      "c4.2xlarge"  : { "Arch" : "NATHVM64"  },
+      "c4.4xlarge"  : { "Arch" : "NATHVM64"  },
+      "c4.8xlarge"  : { "Arch" : "NATHVM64"  },
+      "g2.2xlarge"  : { "Arch" : "NATHVMG2"  },
+      "g2.8xlarge"  : { "Arch" : "NATHVMG2"  },
+      "r3.large"    : { "Arch" : "NATHVM64"  },
+      "r3.xlarge"   : { "Arch" : "NATHVM64"  },
+      "r3.2xlarge"  : { "Arch" : "NATHVM64"  },
+      "r3.4xlarge"  : { "Arch" : "NATHVM64"  },
+      "r3.8xlarge"  : { "Arch" : "NATHVM64"  },
+      "i2.xlarge"   : { "Arch" : "NATHVM64"  },
+      "i2.2xlarge"  : { "Arch" : "NATHVM64"  },
+      "i2.4xlarge"  : { "Arch" : "NATHVM64"  },
+      "i2.8xlarge"  : { "Arch" : "NATHVM64"  },
+      "d2.xlarge"   : { "Arch" : "NATHVM64"  },
+      "d2.2xlarge"  : { "Arch" : "NATHVM64"  },
+      "d2.4xlarge"  : { "Arch" : "NATHVM64"  },
+      "d2.8xlarge"  : { "Arch" : "NATHVM64"  },
+      "hi1.4xlarge" : { "Arch" : "NATHVM64"  },
+      "hs1.8xlarge" : { "Arch" : "NATHVM64"  },
+      "cr1.8xlarge" : { "Arch" : "NATHVM64"  },
+      "cc2.8xlarge" : { "Arch" : "NATHVM64"  }
+    },
+
+    "AWSRegionToECSAMI" : {
+      "us-east-1"      : { "AMIID" : "ami-2b3b6041" },
+      "us-west-2"      : { "AMIID" : "ami-ac6872cd" },
+      "eu-west-1"      : { "AMIID" : "ami-03238b70" },
+      "ap-northeast-1" : { "AMIID" : "ami-fb2f1295" },
+      "ap-southeast-2" : { "AMIID" : "ami-43547120" },
+      "us-west-1"      : { "AMIID" : "ami-bfe095df" },
+      "ap-southeast-1" : { "AMIID" : "ami-c78f43a4" },
+      "eu-central-1"   : { "AMIID" : "ami-e1e6f88d" }
+    },
+
+    "AWSRegionArch2AMI" : {
+      "us-east-1"        : {"PV64" : "ami-5fb8c835", "HVM64" : "ami-60b6c60a", "HVMG2" : "ami-e998ea83"},
+      "us-west-2"        : {"PV64" : "ami-d93622b8", "HVM64" : "ami-f0091d91", "HVMG2" : "ami-315f4850"},
+      "us-west-1"        : {"PV64" : "ami-56ea8636", "HVM64" : "ami-d5ea86b5", "HVMG2" : "ami-943956f4"},
+      "eu-west-1"        : {"PV64" : "ami-95e33ce6", "HVM64" : "ami-bff32ccc", "HVMG2" : "ami-83fd23f0"},
+      "eu-central-1"     : {"PV64" : "ami-794a5915", "HVM64" : "ami-bc5b48d0", "HVMG2" : "ami-ba1a09d6"},
+      "ap-northeast-1"   : {"PV64" : "ami-393c1957", "HVM64" : "ami-383c1956", "HVMG2" : "ami-08e5c166"},
+      "ap-northeast-2"   : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-249b554a", "HVMG2" : "NOT_SUPPORTED"},
+      "ap-southeast-1"   : {"PV64" : "ami-34bd7a57", "HVM64" : "ami-c9b572aa", "HVMG2" : "ami-5a15d239"},
+      "ap-southeast-2"   : {"PV64" : "ami-ced887ad", "HVM64" : "ami-48d38c2b", "HVMG2" : "ami-0c1a446f"},
+      "sa-east-1"        : {"PV64" : "ami-7d15ad11", "HVM64" : "ami-6817af04", "HVMG2" : "NOT_SUPPORTED"},
+      "cn-north-1"       : {"PV64" : "ami-18ac6575", "HVM64" : "ami-43a36a2e", "HVMG2" : "NOT_SUPPORTED"}
+    }
+
+  },
+
+  "Resources" : {
+
+    "VPC" : {
+      "Type" : "AWS::EC2::VPC",
+      "Properties" : {
+        "CidrBlock" : "10.0.0.0/16",
+        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+      }
+    },
+
+    "Subnet" : {
+      "Type" : "AWS::EC2::Subnet",
+      "Properties" : {
+        "VpcId" : { "Ref" : "VPC" },
+        "CidrBlock" : "10.0.0.0/24",
+        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+      }
+    },
+
+    "InternetGateway" : {
+      "Type" : "AWS::EC2::InternetGateway",
+      "Properties" : {
+        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+      }
+    },
+
+    "AttachGateway" : {
+       "Type" : "AWS::EC2::VPCGatewayAttachment",
+       "Properties" : {
+         "VpcId" : { "Ref" : "VPC" },
+         "InternetGatewayId" : { "Ref" : "InternetGateway" }
+       }
+    },
+
+    "RouteTable" : {
+      "Type" : "AWS::EC2::RouteTable",
+      "Properties" : {
+        "VpcId" : {"Ref" : "VPC"},
+        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+      }
+    },
+
+    "Route" : {
+      "Type" : "AWS::EC2::Route",
+      "DependsOn" : "AttachGateway",
+      "Properties" : {
+        "RouteTableId" : { "Ref" : "RouteTable" },
+        "DestinationCidrBlock" : "0.0.0.0/0",
+        "GatewayId" : { "Ref" : "InternetGateway" }
+      }
+    },
+
+    "SubnetRouteTableAssociation" : {
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties" : {
+        "SubnetId" : { "Ref" : "Subnet" },
+        "RouteTableId" : { "Ref" : "RouteTable" }
+      }
+    },
+
+    "NetworkAcl" : {
+      "Type" : "AWS::EC2::NetworkAcl",
+      "Properties" : {
+        "VpcId" : {"Ref" : "VPC"},
+        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+      }
+    },
+
+    "InboundHTTPNetworkAclEntry" : {
+      "Type" : "AWS::EC2::NetworkAclEntry",
+      "Properties" : {
+        "NetworkAclId" : {"Ref" : "NetworkAcl"},
+        "RuleNumber" : "100",
+        "Protocol" : "6",
+        "RuleAction" : "allow",
+        "Egress" : "false",
+        "CidrBlock" : "0.0.0.0/0",
+        "PortRange" : {"From" : "80", "To" : "80"}
+      }
+    },
+
+    "InboundSSHNetworkAclEntry" : {
+      "Type" : "AWS::EC2::NetworkAclEntry",
+      "Properties" : {
+        "NetworkAclId" : {"Ref" : "NetworkAcl"},
+        "RuleNumber" : "101",
+        "Protocol" : "6",
+        "RuleAction" : "allow",
+        "Egress" : "false",
+        "CidrBlock" : "0.0.0.0/0",
+        "PortRange" : {"From" : "22", "To" : "22"}
+      }
+    },
+
+    "InboundResponsePortsNetworkAclEntry" : {
+      "Type" : "AWS::EC2::NetworkAclEntry",
+      "Properties" : {
+        "NetworkAclId" : {"Ref" : "NetworkAcl"},
+        "RuleNumber" : "102",
+        "Protocol" : "6",
+        "RuleAction" : "allow",
+        "Egress" : "false",
+        "CidrBlock" : "0.0.0.0/0",
+        "PortRange" : {"From" : "1024", "To" : "65535"}
+      }
+    },
+
+    "OutBoundHTTPNetworkAclEntry" : {
+      "Type" : "AWS::EC2::NetworkAclEntry",
+      "Properties" : {
+        "NetworkAclId" : {"Ref" : "NetworkAcl"},
+        "RuleNumber" : "100",
+        "Protocol" : "6",
+        "RuleAction" : "allow",
+        "Egress" : "true",
+        "CidrBlock" : "0.0.0.0/0",
+        "PortRange" : {"From" : "80", "To" : "80"}
+      }
+    },
+
+    "OutBoundHTTPSNetworkAclEntry" : {
+      "Type" : "AWS::EC2::NetworkAclEntry",
+      "Properties" : {
+        "NetworkAclId" : {"Ref" : "NetworkAcl"},
+        "RuleNumber" : "101",
+        "Protocol" : "6",
+        "RuleAction" : "allow",
+        "Egress" : "true",
+        "CidrBlock" : "0.0.0.0/0",
+        "PortRange" : {"From" : "443", "To" : "443"}
+      }
+    },
+
+    "OutBoundResponsePortsNetworkAclEntry" : {
+      "Type" : "AWS::EC2::NetworkAclEntry",
+      "Properties" : {
+        "NetworkAclId" : {"Ref" : "NetworkAcl"},
+        "RuleNumber" : "102",
+        "Protocol" : "6",
+        "RuleAction" : "allow",
+        "Egress" : "true",
+        "CidrBlock" : "0.0.0.0/0",
+        "PortRange" : {"From" : "1024", "To" : "65535"}
+      }
+    },
+
+    "SubnetNetworkAclAssociation" : {
+      "Type" : "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties" : {
+        "SubnetId" : { "Ref" : "Subnet" },
+        "NetworkAclId" : { "Ref" : "NetworkAcl" }
+      }
+    },
+
+    "DeployRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version" : "2012-10-17",
+          "Statement": [ {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [ "ec2.amazonaws.com" ]
+            },
+            "Action": [ "sts:AssumeRole" ]
+          } ]
+        },
+        "Path": "/",
+        "Policies": [ {
+          "PolicyName": "root",
+          "PolicyDocument": {
+            "Version" : "2012-10-17",
+            "Statement": [ {
+              "Effect": "Allow",
+              "Action": "*",
+              "Resource": "*"
+            } ]
+          }
+        } ],
+        "ManagedPolicyArns": [ "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess", "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess", "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser", "arn:aws:iam::aws:policy/AmazonEC2ContainerServiceFullAccess" ]
+      }
+    },
+
+    "ContainerRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version" : "2012-10-17",
+          "Statement": [ {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [ "ec2.amazonaws.com" ]
+            },
+            "Action": [ "sts:AssumeRole" ]
+          } ]
+        },
+        "Path": "/",
+        "ManagedPolicyArns": [ "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess", "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess", "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly" ],
+        "Policies": [
+          {
+            "PolicyName": "ecs-instances",
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecs:CreateCluster",
+                    "ecs:RegisterContainerInstance",
+                    "ecs:DeregisterContainerInstance",
+                    "ecs:DiscoverPollEndpoint",
+                    "ecs:Submit*",
+                    "ecs:Poll"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": [
+                    "arn:aws:logs:*:*:*"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "s3-put",
+            "PolicyDocument": {
+    					"Statement": [
+        				{
+            			"Sid": "Stmt1460933966000",
+            			"Effect": "Allow",
+            			"Action": [
+                		"s3:PutObject",
+                		"s3:PutObjectAcl",
+                		"s3:PutObjectVersionAcl"
+            			],
+            			"Resource": [
+                		"arn:aws:s3:::baseball-workbench/*"
+            			]
+        				}
+    					]
+						}
+          }
+        ]
+      }
+    },
+
+    "DeployInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [ {
+          "Ref": "DeployRole"
+        } ]
+      }
+    },
+
+    "ContainerInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [ {
+          "Ref": "ContainerRole"
+        } ]
+      }
+    },
+
+    "ConsulAgentSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Consul Agent Security Group",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "ConsulAgentSG"
+                    }
+                ]
+            }
+        },
+        "ConsulServerSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Consul Server Security Group",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "8300",
+                        "ToPort": "8300",
+                        "SourceSecurityGroupId": {
+                            "Ref": "ConsulAgentSecurityGroup"
+                        }
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "ConsulServerSG"
+                    }
+                ]
+            }
+        },
+        "ConsulAgentSecurityGroupIngressTcpEphemeral": {
+            "DependsOn": [
+                "ConsulAgentSecurityGroup"
+            ],
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": {
+                    "Ref": "ConsulAgentSecurityGroup"
+                },
+                "IpProtocol": "tcp",
+                "FromPort": "32768",
+                "ToPort": "65535",
+                "SourceSecurityGroupId": {
+                    "Ref": "ConsulAgentSecurityGroup"
+                }
+            }
+        },
+        "ConsulAgentSecurityGroupIngressUdpEphemeral": {
+            "DependsOn": [
+                "ConsulAgentSecurityGroup"
+            ],
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": {
+                    "Ref": "ConsulAgentSecurityGroup"
+                },
+                "IpProtocol": "udp",
+                "FromPort": "32768",
+                "ToPort": "65535",
+                "SourceSecurityGroupId": {
+                    "Ref": "ConsulAgentSecurityGroup"
+                }
+            }
+        },
+        "ConsulAgentSecurityGroupIngressDnsUdp": {
+            "DependsOn": [
+                "ConsulAgentSecurityGroup"
+            ],
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": {
+                    "Ref": "ConsulAgentSecurityGroup"
+                },
+                "IpProtocol": "udp",
+                "FromPort": "8600",
+                "ToPort": "8600",
+                "SourceSecurityGroupId": {
+                    "Ref": "ConsulAgentSecurityGroup"
+                }
+            }
+        },
+        "ConsulAgentSecurityGroupIngressDnsTcp": {
+            "DependsOn": [
+                "ConsulAgentSecurityGroup"
+            ],
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": {
+                    "Ref": "ConsulAgentSecurityGroup"
+                },
+                "IpProtocol": "tcp",
+                "FromPort": "8600",
+                "ToPort": "8600",
+                "SourceSecurityGroupId": {
+                    "Ref": "ConsulAgentSecurityGroup"
+                }
+            }
+        },
+        "ConsulAgentSecurityGroupIngressHttp": {
+            "DependsOn": [
+                "ConsulAgentSecurityGroup"
+            ],
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": {
+                    "Ref": "ConsulAgentSecurityGroup"
+                },
+                "IpProtocol": "tcp",
+                "FromPort": "8500",
+                "ToPort": "8500",
+                "SourceSecurityGroupId": {
+                    "Ref": "ConsulAgentSecurityGroup"
+                }
+            }
+        },
+        "ConsulAgentSecurityGroupIngressCli": {
+            "DependsOn": [
+                "ConsulAgentSecurityGroup"
+            ],
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": {
+                    "Ref": "ConsulAgentSecurityGroup"
+                },
+                "IpProtocol": "tcp",
+                "FromPort": "8400",
+                "ToPort": "8400",
+                "SourceSecurityGroupId": {
+                    "Ref": "ConsulAgentSecurityGroup"
+                }
+            }
+        },
+        "ConsulAgentSecurityGroupIngressSerfLanUdp": {
+            "DependsOn": [
+                "ConsulAgentSecurityGroup"
+            ],
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": {
+                    "Ref": "ConsulAgentSecurityGroup"
+                },
+                "IpProtocol": "udp",
+                "FromPort": "8301",
+                "ToPort": "8301",
+                "SourceSecurityGroupId": {
+                    "Ref": "ConsulAgentSecurityGroup"
+                }
+            }
+        },
+        "ConsulAgentSecurityGroupIngressSerfLanTcp": {
+            "DependsOn": [
+                "ConsulAgentSecurityGroup"
+            ],
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": {
+                    "Ref": "ConsulAgentSecurityGroup"
+                },
+                "IpProtocol": "tcp",
+                "FromPort": "8301",
+                "ToPort": "8301",
+                "SourceSecurityGroupId": {
+                    "Ref": "ConsulAgentSecurityGroup"
+                }
+            }
+        },
+        "ConsulServerSecurityGroupIngressSerfWanTcp": {
+            "DependsOn": [
+                "ConsulServerSecurityGroup"
+            ],
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": {
+                    "Ref": "ConsulServerSecurityGroup"
+                },
+                "IpProtocol": "tcp",
+                "FromPort": "8302",
+                "ToPort": "8302",
+                "SourceSecurityGroupId": {
+                    "Ref": "ConsulServerSecurityGroup"
+                }
+            }
+        },
+        "ConsulServerSecurityGroupIngressSerfWanUdp": {
+            "DependsOn": [
+                "ConsulServerSecurityGroup"
+            ],
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": {
+                    "Ref": "ConsulServerSecurityGroup"
+                },
+                "IpProtocol": "udp",
+                "FromPort": "8302",
+                "ToPort": "8302",
+                "SourceSecurityGroupId": {
+                    "Ref": "ConsulServerSecurityGroup"
+                }
+            }
+        },
+        "CommonSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "ECS Security Group",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+    "SecurityGroupInternetSSH" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "VpcId" : { "Ref" : "VPC" },
+        "GroupDescription" : "Enable SSH access via port 22 (from Internet) and over 22 to internal instances (jump box)",
+        "SecurityGroupIngress" : [
+          { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "0.0.0.0/0"}
+         ]
+      }
+    },
+
+    "SecurityGroupInternalSSH" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "VpcId" : { "Ref" : "VPC" },
+        "GroupDescription" : "Enable SSH access via port 22",
+        "SecurityGroupIngress" : [
+          { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "SourceSecurityGroupId" : { "Ref" : "SecurityGroupInternetSSH" }}
+         ]
+      }
+    },
+
+    "JumpBoxEgressRule": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties":{
+        "IpProtocol": "tcp",
+        "FromPort": "22",
+        "ToPort": "22",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "SecurityGroupInternalSSH",
+            "GroupId"
+          ]
+        },
+        "GroupId": {
+          "Fn::GetAtt": [
+            "SecurityGroupInternetSSH",
+            "GroupId"
+          ]
+        }
+      }
+    },
+
+    "SecurityGroupWebService" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "VpcId" : { "Ref" : "VPC" },
+        "GroupDescription" : "Enable Web Services on Common Ports",
+        "SecurityGroupIngress" : [
+          { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "0.0.0.0/0"},
+          { "IpProtocol" : "tcp", "FromPort" : "443", "ToPort" : "443", "CidrIp" : "0.0.0.0/0"},
+          { "IpProtocol" : "tcp", "FromPort" : "8080", "ToPort" : "8080", "CidrIp" : "0.0.0.0/0"},
+          { "IpProtocol" : "tcp", "FromPort" : "8443", "ToPort" : "8443", "CidrIp" : "0.0.0.0/0"}
+         ]
+      }
+    },
+
+    "ProxyServer" : {
+      "Type" : "AWS::EC2::Instance",
+      "DependsOn" : "AttachGateway",
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "sources" : {
+              "/root" : "https://github.com/bryantrobbins/standard-aws/tarball/master"
+            },
+            "files" : {
+              "/root/init/datadir/custom.yaml" : {
+                "content" : { "Ref": "Hieradata"},
+                "encoding": "base64",
+                "mode"  : "000644",
+                "owner" : "root",
+                "group" : "root"
+              }
+            },
+            "commands" : {
+              "init-script" : {
+                "command" : "bash -x init.sh build &> /var/log/init.log", 
+                "cwd" : "/root/init"
+              }
+            }
+          }
+        }
+      },
+      "Properties" : {
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+                          { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "ProxyInstanceType" }, "Arch" ] } ] },
+        "InstanceType" : { "Ref" : "ProxyInstanceType" },
+        "KeyName" : { "Ref" : "KeyName" },
+        "IamInstanceProfile": {
+          "Ref": "DeployInstanceProfile"
+        },
+        "NetworkInterfaces" : [{
+          "GroupSet"                 : [{ "Ref" : "SecurityGroupInternetSSH" }, { "Ref" : "SecurityGroupWebService" }, { "Ref": "ConsulServerSecurityGroup" }, { "Ref": "ConsulAgentSecurityGroup" }, { "Ref": "CommonSecurityGroup" }],
+          "AssociatePublicIpAddress" : "true",
+          "DeviceIndex"              : "0",
+          "DeleteOnTermination"      : "true",
+          "SubnetId"                 : { "Ref" : "Subnet" }
+        }],
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#!/bin/bash -xe\n",
+          "yum update -y aws-cfn-bootstrap\n",
+          "/opt/aws/bin/cfn-init ",
+          " --stack ", { "Ref" : "AWS::StackName" },
+          " --resource ProxyServer ",
+          " --region ", { "Ref" : "AWS::Region" }, "\n"
+        ]]}}
+      }
+    },
+
+    "BuildServer" : {
+      "Type" : "AWS::EC2::Instance",
+      "DependsOn" : "AttachGateway",
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "sources" : {
+              "/root" : "https://github.com/bryantrobbins/standard-aws/tarball/master"
+            },
+            "files" : {
+              "/root/init/datadir/custom.yaml" : {
+                "content" : { "Ref": "Hieradata"},
+                "encoding": "base64",
+                "mode"  : "000644",
+                "owner" : "root",
+                "group" : "root"
+              }
+            },
+            "commands" : {
+              "init-script" : {
+                "command" : "bash -x init.sh build &> /var/log/init.log", 
+                "cwd" : "/root/init"
+              }
+            }
+          }
+        }
+      },
+      "Properties" : {
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+                          { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "BuildInstanceType" }, "Arch" ] } ] },
+        "InstanceType" : { "Ref" : "BuildInstanceType" },
+        "KeyName" : { "Ref" : "KeyName" },
+        "IamInstanceProfile": {
+          "Ref": "DeployInstanceProfile"
+        },
+        "NetworkInterfaces" : [{
+          "GroupSet"                 : [{ "Ref" : "SecurityGroupInternetSSH" }, { "Ref" : "SecurityGroupWebService" }, { "Ref": "ConsulServerSecurityGroup" }, { "Ref": "ConsulAgentSecurityGroup" }, { "Ref": "CommonSecurityGroup" }],
+          "AssociatePublicIpAddress" : "true",
+          "DeviceIndex"              : "0",
+          "DeleteOnTermination"      : "true",
+          "SubnetId"                 : { "Ref" : "Subnet" }
+        }],
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#!/bin/bash -xe\n",
+          "yum update -y aws-cfn-bootstrap\n",
+          "/opt/aws/bin/cfn-init ",
+          " --stack ", { "Ref" : "AWS::StackName" },
+          " --resource BuildServer ",
+          " --region ", { "Ref" : "AWS::Region" }, "\n"
+        ]]}}
+      }
+    },
+    "ECSCluster": {
+      "Type": "AWS::ECS::Cluster"
+    },
+    "ECSAutoScalingGroup" : {
+      "Type" : "AWS::AutoScaling::AutoScalingGroup",
+      "Properties" : {
+        "VPCZoneIdentifier" : [{ "Ref" : "Subnet" }],
+        "LaunchConfigurationName" : { "Ref" : "ContainerInstanceConfiguration" },
+        "MinSize" : "1",
+        "MaxSize" : "1",
+        "DesiredCapacity" : "1"
+      },
+      "UpdatePolicy": {
+        "AutoScalingRollingUpdate": {
+          "MinInstancesInService": "1",
+          "MaxBatchSize": "1",
+          "PauseTime" : "PT15M",
+          "WaitOnResourceSignals": "true"
+        }
+      }
+    },
+    "ContainerInstanceConfiguration": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "configSets": {
+                        "InstallAndRun": [
+                            "Install",
+                            "Configure",
+                            "StartContainers"
+                        ]
+                    },
+                    "Install": {
+                        "files": {
+                            "/etc/sysconfig/docker": {
+                                "content": "OPTIONS='--dns 172.17.42.1 --dns 10.0.0.2 --dns-search service.consul'",
+                                "mode": "000755",
+                                "owner": "root",
+                                "group": "root"
+                            },
+                            "/etc/consul/consul.json": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "{ \"leave_on_terminate\": true, \"recursors\": [ \"",
+                                            "10.0.0.2",
+                                            "\"] }"
+                                        ]
+                                    ]
+                                },
+                                "mode": "000755",
+                                "owner": "root",
+                                "group": "root"
+                            },
+                            "/etc/ecs/ecs.config": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "ECS_CLUSTER=",
+                                            {
+                                                "Ref": "ECSCluster"
+                                            }, "\n",
+                                            "ECS_RESERVED_MEMORY=50"
+                                        ]
+                                    ]
+                                },
+                                "mode": "000755",
+                                "owner": "root",
+                                "group": "root"
+                            }
+                        }
+                    },
+                    "Configure": {
+                        "commands": {
+                            "01_create_consul_data_dir": {
+                                "command": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "mkdir -p /opt/consul"
+                                        ]
+                                    ]
+                                }
+                            },
+                            "02_upgrade_docker": {
+                                "command": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "yum install -y docker"
+                                        ]
+                                    ]
+                                }
+                            },
+                            "03_clean_stuff_up": {
+                                "command": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "rm /var/lib/docker/network/files/local-kv.db"
+                                        ]
+                                    ]
+                                }
+                            },
+                            "04_add_user_to_docker_group": {
+                                "command": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "usermod -a -G docker ec2-user"
+                                        ]
+                                    ]
+                                }
+                            },
+                            "05_restart_docker": {
+                                "command": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "/sbin/service docker restart"
+                                        ]
+                                    ]
+                                }
+                            },
+                            "06_pause_to_wait_for_docker_restart": {
+                                "command": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "/bin/sleep 5"
+                                        ]
+                                    ]
+                                }
+                            },
+                            "07_start_ecs_if_not_running": {
+                                "command": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[[ $(/sbin/status ecs) =~ \"running\" ]] || /sbin/start ecs"
+                                        ]
+                                    ]
+                                }
+                            },
+                            "08_pull_consul_image": {
+                                "command": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "docker pull progrium/consul"
+                                        ]
+                                    ]
+                                }
+                            },
+                            "09_pull_registrator_image": {
+                                "command": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "docker pull gliderlabs/registrator"
+                                        ]
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "StartContainers": {
+                        "commands": {
+                            "01_start_consul_docker_container": {
+                                "command": {
+                                    "Fn::Join": [
+                                        " ",
+                                        [
+                                            "docker run -d --restart=always -p 8301:8301 -p 8301:8301/udp",
+                                            "-p 8400:8400 -p 8500:8500 -p 53:53/udp",
+                                            "-v /opt/consul:/data -v /var/run/docker.sock:/var/run/docker.sock",
+                                            "-v /etc/consul:/etc/consul",
+                                            "-h $(curl -s http://169.254.169.254/latest/meta-data/instance-id)",
+                                            "--name consul-agent progrium/consul -join",
+                                            {
+                                                "Fn::GetAtt": [
+                                                    "BuildServer",
+                                                    "PrivateIp"
+                                                ]
+                                            },
+                                            "-advertise $(curl -s http://169.254.169.254/latest/meta-data/local-ipv4) -dc primary",
+                                            "-config-file /etc/consul/consul.json"
+                                        ]
+                                    ]
+                                }
+                            },
+                            "02_start_registrator_docker_container": {
+                                "command": {
+                                    "Fn::Join": [
+                                        " ",
+                                        [
+                                            "docker run -d --restart=always -v /var/run/docker.sock:/tmp/docker.sock",
+                                            "-h $(curl -s http://169.254.169.254/latest/meta-data/instance-id)",
+                                            "--name consul-registrator gliderlabs/registrator:latest",
+                                            "-ip $(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)",
+                                            "consul://$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4):8500"
+                                        ]
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+      },
+      "Properties": {
+        "AssociatePublicIpAddress" : "true",
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionToECSAMI", { "Ref" : "AWS::Region" }, "AMIID" ] },
+        "InstanceType"   : { "Ref" : "DockerInstanceType" },
+        "IamInstanceProfile": { "Ref": "ContainerInstanceProfile" },
+        "KeyName"        : { "Ref" : "KeyName" },
+        "SecurityGroups" : [{ "Ref" : "SecurityGroupInternalSSH" }, { "Ref" : "SecurityGroupWebService" }, { "Ref": "ConsulAgentSecurityGroup" }, { "Ref": "CommonSecurityGroup" }],
+        "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
+             "#!/bin/bash -xe\n",
+             "yum install -y aws-cfn-bootstrap\n",
+
+             "/opt/aws/bin/cfn-init -v ",
+             "         --stack ", { "Ref" : "AWS::StackName" },
+             "         --resource ContainerInstanceConfiguration ",
+             "         --configsets InstallAndRun ",
+             "         --region ", { "Ref" : "AWS::Region" }, "\n",
+
+             "/opt/aws/bin/cfn-signal -e $? ",
+             "         --stack ", { "Ref" : "AWS::StackName" },
+             "         --resource ECSAutoScalingGroup ",
+             "         --region ", { "Ref" : "AWS::Region" }, "\n"
+        ]]}}
+      }
+    },
+    "myDNSRecord" : {
+      "Type" : "AWS::Route53::RecordSet",
+      "Properties" : {
+         "HostedZoneName" : {
+            "Fn::Join" : [ "", [
+               "btr3.com", "."
+            ] ]
+         },
+         "Comment" : "DNS name for my instance.",  
+         "Name" : {
+            "Fn::Join" : [ "", [
+               "proxy",
+                ".",
+               "baseball",
+                ".",
+               "btr3.com",
+               "."
+            ] ]
+         },
+         "Type" : "A",
+         "TTL" : "900",
+         "ResourceRecords" : [
+           { "Fn::GetAtt" : ["ProxyServer", "PublicIp"] }
+         ]
+      }
+   }
+  },
+
+  "Outputs" : {
+    "URL" : {
+      "Value" : { "Fn::Join" : [ "", ["http://", { "Fn::GetAtt" : ["BuildServer", "PublicIp"] }, ":8080"]]},
+      "Description" : "Jenkins URL"
+    },
+    "SSHCommand" : {
+      "Value" : { "Fn::Join" : [ "", ["ssh -i ~/keys/builder.pem", " ec2-user@", { "Fn::GetAtt" : ["BuildServer", "PublicIp"] }]]},
+      "Description" : "Use this to SSH"
+    }
+  }
+}
